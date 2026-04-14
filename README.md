@@ -70,23 +70,41 @@ WanderLust is a simple MERN travel blog website ✈ This project is aimed to hel
 Install & Configure Docker by using below command, "NewGrp docker" will refresh the group config hence no need to restart the EC2 machine.
 
 ```bash
-sudo apt-get update
-sudo apt-get install docker.io -y
-sudo usermod -aG docker ubuntu && newgrp docker
+# Add Docker's official GPG key:
+sudo apt-get update && sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+sudo apt-get update && sudo apt-get install -y \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    docker-buildx-plugin \
+    docker-compose-plugin
+sudo usermod -aG docker $USER && newgrp docker
 ```
 #
 - <b id="Jenkins">Install and configure Jenkins (Master machine)</b>
 ```bash
-sudo apt update && sudo apt install fontconfig openjdk-25-jre -y
-
-sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
-  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-  
-echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
+sudo apt-get update && sudo apt install -y \
+    fontconfig \
+    openjdk-21-jre
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
   https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
   /etc/apt/sources.list.d/jenkins.list > /dev/null
-  
-sudo apt-get update && sudo apt-get install jenkins -y
+sudo apt-get update && sudo apt-get install -y jenkins
 ```
 - <b>Now, access Jenkins Master on the browser on port 8080 and configure it</b>.
 #
