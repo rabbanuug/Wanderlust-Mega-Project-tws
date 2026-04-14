@@ -71,16 +71,13 @@ Install & Configure Docker by using below command, "NewGrp docker" will refresh 
 
 ```bash
 sudo apt-get update
-```
-```bash
 sudo apt-get install docker.io -y
 sudo usermod -aG docker ubuntu && newgrp docker
 ```
 #
 - <b id="Jenkins">Install and configure Jenkins (Master machine)</b>
 ```bash
-sudo apt update -y
-sudo apt install fontconfig openjdk-17-jre -y
+sudo apt update && sudo apt install fontconfig openjdk-25-jre -y
 
 sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
   https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
@@ -89,8 +86,7 @@ echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
   https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
   /etc/apt/sources.list.d/jenkins.list > /dev/null
   
-sudo apt-get update -y
-sudo apt-get install jenkins -y
+sudo apt-get update && sudo apt-get install jenkins -y
 ```
 - <b>Now, access Jenkins Master on the browser on port 8080 and configure it</b>.
 #
@@ -102,6 +98,7 @@ sudo apt-get install jenkins -y
   sudo apt install unzip
   unzip awscliv2.zip
   sudo ./aws/install
+  rm -rf ./aws/
   aws configure
   ```
 

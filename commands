@@ -1,0 +1,12 @@
+terraform init
+terraform init -upgrade
+
+terraform plan
+terraform plan -out=tfplan -refresh=false
+terraform plan -out=tfplan -parallelism=30
+terraform plan -out=tfplan
+
+terraform 
+terraform apply tfplan
+terraform apply tfplan -refresh=false
+terraform apply tfplan -parallelism=30
