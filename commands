@@ -10,3 +10,28 @@ terraform
 terraform apply tfplan
 terraform apply tfplan -refresh=false
 terraform apply tfplan -parallelism=30
+
+terraform show
+
+aws ec2 describe-instances | grep "InstanceId"
+
+# start instance
+aws ec2 start-instances --instance-ids i-0ff0d95f1b7fc9e75
+
+# stop instance
+aws ec2 stop-instances --instance-ids i-0ff0d95f1b7fc9e75
+
+# Wait for it to reach the 'running' state
+echo "Waiting for instance to start..."
+aws ec2 wait instance-running --instance-ids i-0ff0d95f1b7fc9e75
+
+# Show the new Public IP and State
+aws ec2 describe-instances \
+    --instance-ids i-0ff0d95f1b7fc9e75 \
+    --query 'Reservations[*].Instances[*].{InstanceId:InstanceId,State:State.Name,PublicIP:PublicIpAddress}' \
+    --output table
+
+jenkins username, pass: admin, admin
+- port: 8080
+sonarqube: 
+- port: 9000

@@ -54,8 +54,8 @@ resource "aws_security_group" "allow_user_to_connect" {
 
   ingress {
     description = "SMTPS"
-    from_port = 465
-    to_port = 465
+    from_port = 587
+    to_port = 587
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

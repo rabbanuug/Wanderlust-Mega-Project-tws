@@ -105,6 +105,7 @@ echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
   https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
   /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt-get update && sudo apt-get install -y jenkins
+sudo systemctl enable jenkins && sudo systemctl start jenkins
 ```
 - <b>Now, access Jenkins Master on the browser on port 8080 and configure it</b>.
 #
@@ -139,7 +140,7 @@ sudo apt-get update && sudo apt-get install -y jenkins
   ```bash
   eksctl create cluster --name=wanderlust \
                       --region=us-east-2 \
-                      --version=1.30 \
+                      --version=1.35 \
                       --without-nodegroup
   ```
   - <b>Associate IAM OIDC Provider (Master machine)</b>
@@ -223,13 +224,14 @@ sudo usermod -aG docker ubuntu && newgrp docker
 docker run -itd --name SonarQube-Server -p 9000:9000 sonarqube:lts-community
 ```
 #
-- <b id="Trivy">Install Trivy (Jenkins Worker)</b>
+- <b id="Trivy">Install Trivy (Jenkins Worker) (<a href="https://trivy.dev/docs/latest/getting-started/installation/">Trivy Installation</a>)</b> 
 ```bash
-sudo apt-get install wget apt-transport-https gnupg lsb-release -y
-wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-sudo apt-get update -y
-sudo apt-get install trivy -y
+sudo apt-get install -y \
+    wget \
+    gnupg
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update && sudo apt-get -y install trivy
 ```
 #
 - <b id="Argo">Install and Configure ArgoCD (Master Machine)</b>
