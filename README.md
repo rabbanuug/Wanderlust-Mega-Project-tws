@@ -170,7 +170,7 @@ sudo systemctl enable jenkins && sudo systemctl start jenkins
   - Create a new EC2 instance (Jenkins Worker) with 2CPU, 8GB of RAM (t2.large) and 29 GB of storage and install java on it
   ```bash
   sudo apt update -y
-  sudo apt install fontconfig openjdk-17-jre -y
+  sudo apt install fontconfig openjdk-21-jre -y
   ```
   - Create an IAM role with <mark>administrator access</mark> attach it to the jenkins worker node <mark>Select Jenkins worker node EC2 instance --> Actions --> Security --> Modify IAM role</mark>
   ![image](https://github.com/user-attachments/assets/1a9060db-db11-40b7-86f0-47a65e8ed68b)
