@@ -541,5 +541,3 @@ kubectl get secret --namespace prometheus stable-grafana -o jsonpath="{.data.adm
 ```bash
 eksctl delete cluster --name=wanderlust --region=us-west-1
 ```
-
-#
