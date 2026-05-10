@@ -103,7 +103,7 @@ docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 ```bash
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --server-side
-# --force-conflicts use this tag if you ger conflict error
+# --force-conflicts use this tag if you get conflict error
 ```
 
 Wait for all pods to be ready:
@@ -133,15 +133,24 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 Install the ArgoCD CLI:
 
 ```bash
+# for amd64
 sudo curl -sSL -o /usr/local/bin/argocd \
     https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+sudo chmod +x /usr/local/bin/argocd
+
+# uninstall argo 
+sudo rm /usr/local/bin/argocd
+
+# for arm64
+sudo curl -sSL -o /usr/local/bin/argocd \
+    https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64
 sudo chmod +x /usr/local/bin/argocd
 ```
 
 Login (accept the self-signed cert warning):
 
 ```bash
-argocd login localhost:30293 --username admin --insecure
+argocd login localhost:32362 --username admin --insecure
 ```
 
 No need to run `argocd cluster add`. Since ArgoCD runs inside k3s it already has the local cluster registered automatically. Verify with:
@@ -165,6 +174,21 @@ Go to **Manage Jenkins → Plugins → Available plugins** and install:
 - Docker
 - Pipeline: Stage View
 
+# Get sonarqube token
+Administration → Security → Users 
+http://localhost:9000/admin/users
+name: sonar-token
+Generate
+
+# Get docker cred
+https://app.docker.com/accounts/YOUR_USERNAME/settings/personal-access-tokens
+docker login -u rabbanug1
+paste the token
+
+# Get github token
+https://github.com/settings/tokens
+select only Repo full control
+
 ### Add Credentials
 
 Go to **Manage Jenkins → Credentials** and add:
@@ -184,15 +208,15 @@ Go to **Manage Jenkins → Credentials** and add:
 - Token: select `sonar-token` credential
 
 **Manage Jenkins → Tools → SonarQube Scanner:**
-
+- Name: Sonar
 - Add a SonarQube Scanner installation (install automatically)
 
 ### SonarQube Webhook
 
-In SonarQube go to **Administration → Webhooks → Create:**
+In SonarQube go to **Administration -> Configuration -> Webhooks -> Create:**
 
 - Name: `jenkins`
-- URL: `http://localhost:8080/sonarqube-webhook/`
+- URL: `http://[IP_ADDRESS]/sonarqube-webhook/`
 
 ---
 
@@ -204,12 +228,22 @@ In ArgoCD go to **Settings → Repositories → Connect Repo:**
 - URL: your GitHub repo URL
 - Username + PAT token
 
-Then go to **Applications → New App** and fill in:
+Then go to **Applications → New App** and fill in the following:
 
-- Repo URL + path: `kubernetes`
-- Cluster: `wanderlust-k3s`
+**GENERAL**
+- Application Name: `wanderlust`
+- Project Name: `default`
+- Sync Policy: `Automatic` (Check **Prune** and **Self Heal**)
+- Sync Options: Check **Auto-Create Namespace**
+
+**SOURCE**
+- Repository URL: Select your connected Git repo
+- Revision: `main` (or your default branch)
+- Path: `kubernetes`
+
+**DESTINATION**
+- Cluster URL: `https://kubernetes.default.svc`
 - Namespace: `wanderlust`
-- Enable **Auto-Create Namespace**
 
 ---
 
@@ -218,9 +252,7 @@ Then go to **Applications → New App** and fill in:
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
-
 kubectl create namespace prometheus
-
 helm install stable prometheus-community/kube-prometheus-stack -n prometheus
 ```
 
