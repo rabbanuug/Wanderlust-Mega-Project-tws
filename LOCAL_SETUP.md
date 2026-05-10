@@ -14,7 +14,7 @@ Deploy the Wanderlust MERN app locally using k3s instead of AWS EKS.
 
 ---
 
-## Prerequisites/
+## Prerequisites
 
 ### 1. Install Docker
 
@@ -119,7 +119,7 @@ kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
 kubectl get svc -n argocd
 ```
 
-Access ArgoCD at `http://localhost:<nodeport>`.
+Note the NodePort assigned to argocd-server and access ArgoCD at `http://localhost:<nodeport>`.
 
 Get the initial admin password:
 
@@ -128,29 +128,29 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
     -o jsonpath="{.data.password}" | base64 -d; echo
 ```
 
-### ArgoCD CLI login
+### ArgoCD CLI
 
 Install the ArgoCD CLI:
 
 ```bash
-# for amd64
+# amd64
 sudo curl -sSL -o /usr/local/bin/argocd \
     https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo chmod +x /usr/local/bin/argocd
 
-# uninstall argo 
-sudo rm /usr/local/bin/argocd
-
-# for arm64
+# arm64
 sudo curl -sSL -o /usr/local/bin/argocd \
     https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-arm64
 sudo chmod +x /usr/local/bin/argocd
+
+# uninstall
+sudo rm /usr/local/bin/argocd
 ```
 
-Login (accept the self-signed cert warning):
+Login using the NodePort you noted above:
 
 ```bash
-argocd login localhost:32362 --username admin --insecure
+argocd login localhost:<nodeport> --username admin --insecure
 ```
 
 No need to run `argocd cluster add`. Since ArgoCD runs inside k3s it already has the local cluster registered automatically. Verify with:
@@ -174,30 +174,39 @@ Go to **Manage Jenkins → Plugins → Available plugins** and install:
 - Docker
 - Pipeline: Stage View
 
-# Get sonarqube token
-Administration → Security → Users 
-http://localhost:9000/admin/users
-name: sonar-token
-Generate
+### Configure Built-in Node as Agent
 
-# Get docker cred
-https://app.docker.com/accounts/YOUR_USERNAME/settings/personal-access-tokens
-docker login -u rabbanug1
-paste the token
+The Jenkinsfile targets the label `Node`. Configure the built-in Jenkins node to carry that label:
 
-# Get github token
-https://github.com/settings/tokens
-select only Repo full control
+Go to **Manage Jenkins → Nodes → Built-In Node → Configure:**
+
+- **Number of executors:** 2
+- **Labels:** `Node`
+- **Usage:** Use this node as much as possible
 
 ### Add Credentials
 
-Go to **Manage Jenkins → Credentials** and add:
+**Generate a SonarQube token:**
 
-| ID             | Kind              | Value                |
-| -------------- | ----------------- | -------------------- |
-| `sonar-token`  | Secret text       | SonarQube user token |
-| `docker-creds` | Username/Password | Docker Hub login     |
-| `github-token` | Username/Password | GitHub PAT           |
+Go to `http://localhost:9000/admin/users` → **Administration → Security → Users → Token**, enter name `sonar-token` and click Generate.
+
+**Generate a Docker Hub personal access token:**
+
+Go to your Docker Hub account → **Account Settings → Personal access tokens → Generate new token**.
+
+**Generate a GitHub personal access token:**
+
+Go to **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**, select `repo` scope (full control).
+
+---
+
+Go to **Manage Jenkins → Credentials → System → Global credentials → Add Credentials** and add:
+
+| ID             | Kind              | Value                             |
+| -------------- | ----------------- | --------------------------------- |
+| `sonar-token`  | Secret text       | SonarQube user token              |
+| `docker-creds` | Username/Password | Docker Hub username + access token|
+| `github-token` | Username/Password | GitHub username + PAT             |
 
 ### Configure SonarQube Integration
 
@@ -207,16 +216,92 @@ Go to **Manage Jenkins → Credentials** and add:
 - URL: `http://localhost:9000`
 - Token: select `sonar-token` credential
 
-**Manage Jenkins → Tools → SonarQube Scanner:**
-- Name: Sonar
-- Add a SonarQube Scanner installation (install automatically)
+**Manage Jenkins → Tools → SonarQube Scanner installations:**
+
+- Name: `Sonar`
+- Install automatically: enabled
+
+### Configure OWASP Dependency-Check Tool
+
+**Manage Jenkins → Tools → Dependency-Check installations:**
+
+- Name: `DC`
+- Install automatically: enabled (select latest version)
+
+### Configure Shared Library
+
+**Manage Jenkins → System → Global Trusted Pipeline Libraries → Add:**
+
+- Name: `Shared`
+- Default version: `main`
+- Retrieval method: Modern SCM → Git
+- Project repository: `<URL of your Shared library GitHub repo>`
+- Credentials: select `github-token`
 
 ### SonarQube Webhook
 
-In SonarQube go to **Administration -> Configuration -> Webhooks -> Create:**
+SonarQube needs to call back to Jenkins when analysis is done. Since SonarQube runs in Docker, it cannot reach `localhost:8080` — use your machine's LAN IP instead.
+
+Get your host IP:
+
+```bash
+hostname -I | awk '{print $1}'
+```
+
+In SonarQube go to **Administration → Configuration → Webhooks → Create:**
 
 - Name: `jenkins`
-- URL: `http://[IP_ADDRESS]/sonarqube-webhook/`
+- URL: `http://<your-host-ip>:8080/sonarqube-webhook/`
+
+### Set Docker Socket Permissions
+
+Allow Jenkins (running as the `jenkins` user inside the container) to execute Docker commands on the host socket:
+
+```bash
+sudo chmod 666 /var/run/docker.sock
+```
+
+> **Note:** This grants all container users access to the Docker daemon. Acceptable for a local dev/lab setup; do not use in production or shared environments.
+
+---
+
+## Create Jenkins Pipelines
+
+### Wanderlust-CI
+
+Go to **Jenkins Dashboard → New Item:**
+
+- Name: `Wanderlust-CI`
+- Type: Pipeline → OK
+
+Under **Pipeline:**
+
+- Definition: `Pipeline script from SCM`
+- SCM: `Git`
+- Repository URL: your GitHub repo URL
+- Credentials: select `github-token`
+- Branch: `*/main`
+- Script Path: `Jenkinsfile`
+
+Save and run.
+
+### Wanderlust-CD
+
+Go to **Jenkins Dashboard → New Item:**
+
+- Name: `Wanderlust-CD`
+- Type: Pipeline → OK
+
+Under **Pipeline:**
+
+- Definition: `Pipeline script from SCM`
+- SCM: `Git`
+- Repository URL: your GitHub repo URL
+- Credentials: select `github-token`
+- Branch: `*/main`
+- Script Path: `GitOps/Jenkinsfile`
+
+Save. This pipeline is triggered automatically by Wanderlust-CI on success.
 
 ---
 
@@ -226,24 +311,60 @@ In ArgoCD go to **Settings → Repositories → Connect Repo:**
 
 - Type: HTTPS
 - URL: your GitHub repo URL
-- Username + PAT token
+- Username: your GitHub username
+- Password: your GitHub PAT
 
 Then go to **Applications → New App** and fill in the following:
 
 **GENERAL**
 - Application Name: `wanderlust`
 - Project Name: `default`
-- Sync Policy: `Automatic` (Check **Prune** and **Self Heal**)
-- Sync Options: Check **Auto-Create Namespace**
+- Sync Policy: `Automatic` (check **Prune** and **Self Heal**)
+- Sync Options: check **Auto-Create Namespace**
 
 **SOURCE**
-- Repository URL: Select your connected Git repo
-- Revision: `main` (or your default branch)
+- Repository URL: select your connected Git repo
+- Revision: `main`
 - Path: `kubernetes`
 
 **DESTINATION**
 - Cluster URL: `https://kubernetes.default.svc`
 - Namespace: `wanderlust`
+
+---
+
+## Set Local Environment Variables
+
+The `Automations/` scripts fetch the EC2 public IP to patch `.env.docker` files. For local k3s, the cluster is on the same machine — set these files manually once:
+
+**`backend/.env.docker`** — set `FRONTEND_URL` to the frontend NodePort:
+
+```bash
+sed -i "s|FRONTEND_URL.*|FRONTEND_URL=\"http://localhost:31000\"|g" backend/.env.docker
+```
+
+**`frontend/.env.docker`** — set `VITE_API_PATH` to the backend NodePort:
+
+```bash
+sed -i "s|VITE_API_PATH.*|VITE_API_PATH=\"http://localhost:31100\"|g" frontend/.env.docker
+```
+
+These values match the NodePorts defined in the Kubernetes manifests (`kubernetes/frontend.yaml` → 31000, `kubernetes/backend.yaml` → 31100).
+
+---
+
+## Access the Application
+
+Once ArgoCD syncs your manifests, verify services are up:
+
+```bash
+kubectl get svc -n wanderlust
+```
+
+Access the app:
+
+- **Frontend:** http://localhost:31000
+- **Backend API:** http://localhost:31100
 
 ---
 
@@ -256,10 +377,28 @@ kubectl create namespace prometheus
 helm install stable prometheus-community/kube-prometheus-stack -n prometheus
 ```
 
+Verify all pods are running:
+
+```bash
+kubectl get pods -n prometheus
+```
+
+Expose Prometheus:
+
+```bash
+kubectl patch svc stable-kube-prometheus-sta-prometheus -n prometheus \
+    -p '{"spec": {"type": "NodePort"}}'
+```
+
 Expose Grafana:
 
 ```bash
 kubectl patch svc stable-grafana -n prometheus -p '{"spec": {"type": "NodePort"}}'
+```
+
+Check assigned ports:
+
+```bash
 kubectl get svc -n prometheus
 ```
 
@@ -270,19 +409,7 @@ kubectl get secret --namespace prometheus stable-grafana \
     -o jsonpath="{.data.admin-password}" | base64 --decode; echo
 ```
 
-Login at `http://localhost:<nodeport>` with username `admin`.
-
----
-
-## Access the Application
-
-Once ArgoCD syncs your manifests:
-
-```bash
-kubectl get svc -n wanderlust
-```
-
-The app will be available on the NodePort assigned to the frontend service.
+Login at `http://localhost:<grafana-nodeport>` with username `admin`.
 
 ---
 
@@ -291,10 +418,10 @@ The app will be available on the NodePort assigned to the frontend service.
 Stop Jenkins and SonarQube:
 
 ```bash
-docker compose down -v
+cd setup && docker compose down -v
 ```
 
-Remove ArgoCD and monitoring:
+Remove ArgoCD, monitoring, and the application:
 
 ```bash
 kubectl delete namespace argocd prometheus wanderlust
