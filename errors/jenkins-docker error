@@ -1,0 +1,15 @@
++ docker build -t rabbanug1/wanderlust-backend-beta:latest .
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+time="2026-05-11T05:45:30Z" level=error msg="Can't add file /var/jenkins_home/workspace/Wanderlust-CI/backend/.babelrc to tar: io: read/write on closed pipe"
+time="2026-05-11T05:45:30Z" level=error msg="Can't close tar writer: io: read/write on closed pipe"
+failed to connect to the docker API at unix:///var/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /var/run/docker.sock: connect: no such file or directory
+[Pipeline] }
++ docker build -t rabbanug1/wanderlust-frontend-beta:latest .
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+failed to connect to the docker API at unix:///var/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /var/run/docker.sock: connect: no such file or directory
