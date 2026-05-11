@@ -1,16 +1,17 @@
 @Library('Shared') _
 pipeline {
     agent {label 'Node'}
-    
-    environment{
+
+    environment {
         SONAR_HOME = tool "Sonar"
+        DOCKER_USER = "rabbanug1"
     }
-    
+
     parameters {
-        string(name: 'FRONTEND_DOCKER_TAG', defaultValue: '', description: 'Setting docker image for latest push')
-        string(name: 'BACKEND_DOCKER_TAG', defaultValue: '', description: 'Setting docker image for latest push')
+        string(name: 'FRONTEND_DOCKER_TAG', defaultValue: 'latest', description: 'Setting docker image for latest push')
+        string(name: 'BACKEND_DOCKER_TAG', defaultValue: 'latest', description: 'Setting docker image for latest push')
     }
-    
+
     stages {
         stage("Validate Parameters") {
             steps {
@@ -21,70 +22,70 @@ pipeline {
                 }
             }
         }
-        stage("Workspace cleanup"){
-            steps{
-                script{
+
+        stage("Workspace cleanup") {
+            steps {
+                script {
                     cleanWs()
                 }
             }
         }
-        
+
         stage('Git: Code Checkout') {
             steps {
-                script{
-                    code_checkout("https://github.com/LondheShubham153/Wanderlust-Mega-Project.git","main")
+                script {
+                    code_checkout("https://github.com/rabbanuug/Wanderlust-Mega-Project-tws.git", "main")
                 }
             }
         }
-        
-        stage("Trivy: Filesystem scan"){
-            steps{
-                script{
+
+        stage("Trivy: Filesystem scan") {
+            steps {
+                script {
                     trivy_scan()
                 }
             }
         }
 
-        stage("OWASP: Dependency check"){
-            steps{
-                script{
+        stage("OWASP: Dependency check") {
+            steps {
+                script {
                     owasp_dependency()
                 }
             }
         }
-        
-        stage("SonarQube: Code Analysis"){
-            steps{
-                script{
-                    sonarqube_analysis("Sonar","wanderlust","wanderlust")
+
+        stage("SonarQube: Code Analysis") {
+            steps {
+                script {
+                    sonarqube_analysis("Sonar", "wanderlust", "wanderlust")
                 }
             }
         }
-        
-        stage("SonarQube: Code Quality Gates"){
-            steps{
-                script{
+
+        stage("SonarQube: Code Quality Gates") {
+            steps {
+                script {
                     sonarqube_code_quality()
                 }
             }
         }
-        
+
         stage('Exporting environment variables') {
-            parallel{
-                stage("Backend env setup"){
+            parallel {
+                stage("Backend env setup") {
                     steps {
-                        script{
-                            dir("Automations"){
+                        script {
+                            dir("Automations") {
                                 sh "bash updatebackendnew.sh"
                             }
                         }
                     }
                 }
-                
-                stage("Frontend env setup"){
+                stage("Frontend env setup") {
                     steps {
-                        script{
-                            dir("Automations"){
+                        script {
+                            dir("Automations") {
                                 sh "bash updatefrontendnew.sh"
                             }
                         }
@@ -92,32 +93,60 @@ pipeline {
                 }
             }
         }
-        
-        stage("Docker: Build Images"){
-            steps{
-                script{
-                        dir('backend'){
-                            docker_build("wanderlust-backend-beta","${params.BACKEND_DOCKER_TAG}","trainwithshubham")
-                        }
-                    
-                        dir('frontend'){
-                            docker_build("wanderlust-frontend-beta","${params.FRONTEND_DOCKER_TAG}","trainwithshubham")
-                        }
+
+        stage("Docker: Setup Buildx") {
+            steps {
+                sh """
+                    docker buildx inspect multiarch > /dev/null 2>&1 \
+                        || docker buildx create --name multiarch --driver docker-container --use
+                    docker buildx use multiarch
+                    docker buildx inspect --bootstrap
+                """
+            }
+        }
+
+        stage("Docker: Login") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-creds',
+                        usernameVariable: 'DOCKER_LOGIN_USER',
+                        passwordVariable: 'DOCKER_LOGIN_PASS')]) {
+                    sh "echo \$DOCKER_LOGIN_PASS | docker login -u \$DOCKER_LOGIN_USER --password-stdin"
                 }
             }
         }
-        
-        stage("Docker: Push to DockerHub"){
-            steps{
-                script{
-                    docker_push("wanderlust-backend-beta","${params.BACKEND_DOCKER_TAG}","trainwithshubham") 
-                    docker_push("wanderlust-frontend-beta","${params.FRONTEND_DOCKER_TAG}","trainwithshubham")
+
+        stage("Docker: Build & Push Images") {
+            parallel {
+                stage("Backend") {
+                    steps {
+                        dir('backend') {
+                            sh """
+                                docker buildx build \
+                                    --platform linux/arm64 \
+                                    -t ${env.DOCKER_USER}/wanderlust-backend-beta:${params.BACKEND_DOCKER_TAG} \
+                                    --push .
+                            """
+                        }
+                    }
+                }
+                stage("Frontend") {
+                    steps {
+                        dir('frontend') {
+                            sh """
+                                docker buildx build \
+                                    --platform linux/arm64 \
+                                    -t ${env.DOCKER_USER}/wanderlust-frontend-beta:${params.FRONTEND_DOCKER_TAG} \
+                                    --push .
+                            """
+                        }
+                    }
                 }
             }
         }
     }
-    post{
-        success{
+
+    post {
+        success {
             archiveArtifacts artifacts: '*.xml', followSymlinks: false
             build job: "Wanderlust-CD", parameters: [
                 string(name: 'FRONTEND_DOCKER_TAG', value: "${params.FRONTEND_DOCKER_TAG}"),
