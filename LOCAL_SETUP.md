@@ -212,7 +212,7 @@ Go to **Manage Jenkins → Credentials → System → Global credentials → Add
 
 **Manage Jenkins → System → SonarQube servers:**
 
-- Name: `sonar`
+- Name: `Sonar`
 - URL: `http://localhost:9000`
 - Token: select `sonar-token` credential
 

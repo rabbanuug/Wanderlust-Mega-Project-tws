@@ -1,0 +1,3 @@
+ERROR: SonarQube installation defined in this job (Sonar) does not match any configured installation. Number of installations that can be configured: 1.
+If you want to reassign jobs to a different SonarQube installation, check the documentation under https://redirect.sonarsource.com/plugins/jenkins.html
+Finished: FAILURE
