@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: rabbanug1/wanderlust-frontend-beta:latest
+          image: rabbanug1/wanderlust-frontend-beta:v1.1
           ports:
             - containerPort: 5173
           env:
