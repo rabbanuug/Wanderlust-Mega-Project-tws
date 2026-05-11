@@ -65,10 +65,10 @@ pipeline {
                             git add .
 
                             echo "Commiting changes: "
-                            git commit -m "Updated environment variables"
+                            git diff --cached --quiet && echo "No changes to commit" || git commit -m "Updated environment variables"
 
                             echo "Pushing changes to github: "
-                            git push https://github.com/rabbanuug/Wanderlust-Mega-Project-tws.git main
+                            git diff origin/main..HEAD --quiet && echo "Nothing to push" || git push https://github.com/rabbanuug/Wanderlust-Mega-Project-tws.git main
                         '''
                     }
                 }
