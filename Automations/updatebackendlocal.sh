@@ -3,7 +3,7 @@
 # Local k3s equivalent of updatebackendnew.sh (which uses AWS EC2 to get the IP).
 # For local k3s the frontend is always reachable at localhost:31000.
 # Change HOST_IP to your machine's LAN IP if accessing the app from another device on the network.
-HOST_IP="localhost"
+HOST_IP="${WANDERLUST_HOST_IP:-localhost}"
 
 file_to_find="../backend/.env.docker"
 
