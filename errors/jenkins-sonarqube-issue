@@ -1,0 +1,31 @@
+04:57:05.127 DEBUG Exception caught during execution of command '[/usr/bin/git, config, --system, --show-origin, --list, -z]' in '/usr/bin', return code '128', error message 'fatal: unable to read config file '/etc/gitconfig': No such file or directory'
+
+04:57:07.924 DEBUG 'JavaScript/TypeScript Coverage' skipped because of missing configuration requirements.
+04:57:07.924 DEBUG 'Import of TSLint issues' skipped because of missing configuration requirements.
+04:57:07.924 DEBUG 'Import of stylelint issues' skipped because of missing configuration requirements.
+04:57:07.925 DEBUG 'Generic Test Executions Report' skipped because of missing configuration requirements.
+
+04:57:09.438 DEBUG Embedded node not found for platform /linux-arm64/node.xz
+
+04:57:09.446 ERROR Error when running: 'node -v'. Is Node.js available during analysis?
+Caused by: java.io.IOException: Cannot run program "node": error=2, No such file or directory
+
+04:57:09.496 ERROR Error during SonarScanner Engine execution
+
+java.lang.IllegalStateException: Error while running Node.js. A supported version of Node.js is required for running the analysis of JS/TS files.
+
+Please make sure a supported version of Node.js is available in the PATH or an executable path is provided via 'sonar.nodejs.executable' property.
+
+Alternatively, you can exclude JS/TS files from your analysis using the 'sonar.exclusions' configuration property.
+
+Caused by: org.sonar.plugins.javascript.nodejs.NodeCommandException:
+Error when running: 'node -v'. Is Node.js available during analysis?
+
+Caused by: java.io.IOException:
+Cannot run program "node": error=2, No such file or directory
+
+04:57:09.834 DEBUG Java command exited with code 1
+
+04:57:09.834 INFO  EXECUTION FAILURE
+
+WARN: Unable to locate 'report-task.txt' in the workspace. Did the SonarScanner succeed?

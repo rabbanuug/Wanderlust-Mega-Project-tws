@@ -275,6 +275,37 @@ sudo chmod 666 /var/run/docker.sock
 
 > **Note:** This grants all container users access to the Docker daemon. Acceptable for a local dev/lab setup; do not use in production or shared environments.
 
+### Mount Node.js into Jenkins (arm64 requirement)
+
+SonarQube Scanner does not ship a bundled Node.js for arm64. The Jenkins container needs Node.js from the host.
+
+First confirm Node.js (≥ 18) is installed on the host:
+
+```bash
+node --version
+```
+
+If not installed:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+Find the binary path and add it to `setup/compose.yml` under the Jenkins volumes:
+
+```bash
+which node    # note this path
+```
+
+The `setup/compose.yml` already has `/usr/bin/node` as a placeholder — update it if `which node` returns a different path, then restart Jenkins:
+
+```bash
+cd setup
+docker compose down && docker compose up -d
+docker exec -u jenkins jenkins node --version   # verify
+```
+
 ---
 
 ## Create Jenkins Pipelines
