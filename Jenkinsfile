@@ -72,12 +72,14 @@ pipeline {
         }
 
         stage('Exporting environment variables') {
+            // AWS EKS  → updatebackendnew.sh  / updatefrontendnew.sh  (fetches EC2 public IP)
+            // Local k3s → updatebackendlocal.sh / updatefrontendlocal.sh (uses localhost)
             parallel {
                 stage("Backend env setup") {
                     steps {
                         script {
                             dir("Automations") {
-                                sh "bash updatebackendnew.sh"
+                                sh "bash updatebackendlocal.sh"
                             }
                         }
                     }
@@ -86,7 +88,7 @@ pipeline {
                     steps {
                         script {
                             dir("Automations") {
-                                sh "bash updatefrontendnew.sh"
+                                sh "bash updatefrontendlocal.sh"
                             }
                         }
                     }

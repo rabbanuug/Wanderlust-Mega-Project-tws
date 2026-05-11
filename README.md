@@ -215,8 +215,7 @@ sudo systemctl enable jenkins && sudo systemctl start jenkins
 - <b id="docker">Install docker (Jenkins Worker)</b>
 
 ```bash
-sudo apt install docker.io -y
-sudo usermod -aG docker ubuntu && newgrp docker
+check above for instructions to install docker on ubuntu server
 ```
 #
 - <b id="Sonar">Install and configure SonarQube (Master machine)</b>
@@ -226,9 +225,7 @@ docker run -itd --name SonarQube-Server -p 9000:9000 sonarqube:lts-community
 #
 - <b id="Trivy">Install Trivy (Jenkins Worker) (<a href="https://trivy.dev/docs/latest/getting-started/installation/">Trivy Installation</a>)</b> 
 ```bash
-sudo apt-get install -y \
-    wget \
-    gnupg
+sudo apt-get install -y wget gnupg
 wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
 sudo apt-get update && sudo apt-get -y install trivy

@@ -333,23 +333,32 @@ Then go to **Applications → New App** and fill in the following:
 
 ---
 
-## Set Local Environment Variables
+## Automations Scripts
 
-The `Automations/` scripts fetch the EC2 public IP to patch `.env.docker` files. For local k3s, the cluster is on the same machine — set these files manually once:
+The `Automations/` directory contains two pairs of scripts that patch the `.env.docker` files before Docker images are built:
 
-**`backend/.env.docker`** — set `FRONTEND_URL` to the frontend NodePort:
+| Script | Purpose | When to use |
+|---|---|---|
+| `updatebackendnew.sh` | Sets `FRONTEND_URL` — queries AWS EC2 for the worker node's public IP | AWS EKS setup |
+| `updatefrontendnew.sh` | Sets `VITE_API_PATH` — queries AWS EC2 for the worker node's public IP | AWS EKS setup |
+| `updatebackendlocal.sh` | Sets `FRONTEND_URL` to `http://localhost:31000` | Local k3s setup |
+| `updatefrontendlocal.sh` | Sets `VITE_API_PATH` to `http://localhost:31100` | Local k3s setup |
+
+The `Jenkinsfile` is already set to call the local scripts. If you switch to AWS EKS, change the two `sh "bash update*local.sh"` lines in the `Exporting environment variables` stage back to `update*new.sh`, and update the `INSTANCE_ID` in each AWS script to match your EC2 worker node.
+
+**Accessing from another device on the network:**
+
+If you need to open the app from a phone or another machine on the same LAN, edit both local scripts and change:
 
 ```bash
-sed -i "s|FRONTEND_URL.*|FRONTEND_URL=\"http://localhost:31000\"|g" backend/.env.docker
+HOST_IP="localhost"
 ```
 
-**`frontend/.env.docker`** — set `VITE_API_PATH` to the backend NodePort:
+to your machine's LAN IP, for example:
 
 ```bash
-sed -i "s|VITE_API_PATH.*|VITE_API_PATH=\"http://localhost:31100\"|g" frontend/.env.docker
+HOST_IP="192.168.1.100"   # replace with output of: hostname -I | awk '{print $1}'
 ```
-
-These values match the NodePorts defined in the Kubernetes manifests (`kubernetes/frontend.yaml` → 31000, `kubernetes/backend.yaml` → 31100).
 
 ---
 
