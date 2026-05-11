@@ -74,7 +74,10 @@ pipeline {
 
         stage('Exporting environment variables') {
             // AWS EKS  → updatebackendnew.sh  / updatefrontendnew.sh  (fetches EC2 public IP)
-            // Local k3s → updatebackendlocal.sh / updatefrontendlocal.sh (uses localhost)
+            // Local k3s → updatebackendlocal.sh / updatefrontendlocal.sh (uses WANDERLUST_HOST_IP credential)
+            environment {
+                WANDERLUST_HOST_IP = credentials('WANDERLUST_HOST_IP')
+            }
             parallel {
                 stage("Backend env setup") {
                     steps {
