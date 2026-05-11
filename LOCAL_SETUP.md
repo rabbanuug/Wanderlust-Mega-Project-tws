@@ -228,6 +228,18 @@ Go to **Manage Jenkins → Credentials → System → Global credentials → Add
 - Name: `DC`
 - Install automatically: enabled (select latest version)
 
+**Get a free NVD API key** (required — without it the first run downloads 349k records and takes 1-2 hours):
+
+Go to https://nvd.nist.gov/developers/request-an-api-key, submit your email, and the key arrives within minutes.
+
+Add it as a credential — **Manage Jenkins → Credentials → System → Global credentials → Add Credentials:**
+
+| Field | Value |
+|---|---|
+| Kind | Secret text |
+| Secret | your NVD API key |
+| ID | `nvd-api-key` |
+
 ### Configure Shared Library
 
 **Manage Jenkins → System → Global Trusted Pipeline Libraries → Add:**

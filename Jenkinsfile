@@ -5,6 +5,7 @@ pipeline {
     environment {
         SONAR_HOME = tool "Sonar"
         DOCKER_USER = "rabbanug1"
+        NVD_API_KEY = credentials('nvd-api-key')
     }
 
     parameters {
