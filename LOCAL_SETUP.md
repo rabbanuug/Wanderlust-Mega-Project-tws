@@ -298,12 +298,20 @@ Find the binary path and add it to `setup/compose.yml` under the Jenkins volumes
 which node    # note this path
 ```
 
-The `setup/compose.yml` already has `/usr/bin/node` as a placeholder — update it if `which node` returns a different path, then restart Jenkins:
+Also mount the Docker binary so Jenkins can run `docker build` and `docker push`. Find both paths and update `setup/compose.yml` if they differ:
+
+```bash
+which node    # e.g. /usr/bin/node or /home/ubuntu/.nvm/versions/node/vX.Y.Z/bin/node
+which docker  # typically /usr/bin/docker
+```
+
+The `setup/compose.yml` already has entries for both — update the node path if `which node` returns something different, then restart Jenkins:
 
 ```bash
 cd setup
 docker compose down && docker compose up -d
-docker exec -u jenkins jenkins node --version   # verify
+docker exec -u jenkins jenkins node --version    # verify node
+docker exec -u jenkins jenkins docker --version  # verify docker
 ```
 
 ---

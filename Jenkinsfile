@@ -97,17 +97,6 @@ pipeline {
             }
         }
 
-        stage("Docker: Setup Buildx") {
-            steps {
-                sh """
-                    docker buildx inspect multiarch > /dev/null 2>&1 \
-                        || docker buildx create --name multiarch --driver docker-container --use
-                    docker buildx use multiarch
-                    docker buildx inspect --bootstrap
-                """
-            }
-        }
-
         stage("Docker: Login") {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-creds',
@@ -123,24 +112,16 @@ pipeline {
                 stage("Backend") {
                     steps {
                         dir('backend') {
-                            sh """
-                                docker buildx build \
-                                    --platform linux/arm64 \
-                                    -t ${env.DOCKER_USER}/wanderlust-backend-beta:${params.BACKEND_DOCKER_TAG} \
-                                    --push .
-                            """
+                            sh "docker build -t ${env.DOCKER_USER}/wanderlust-backend-beta:${params.BACKEND_DOCKER_TAG} ."
+                            sh "docker push ${env.DOCKER_USER}/wanderlust-backend-beta:${params.BACKEND_DOCKER_TAG}"
                         }
                     }
                 }
                 stage("Frontend") {
                     steps {
                         dir('frontend') {
-                            sh """
-                                docker buildx build \
-                                    --platform linux/arm64 \
-                                    -t ${env.DOCKER_USER}/wanderlust-frontend-beta:${params.FRONTEND_DOCKER_TAG} \
-                                    --push .
-                            """
+                            sh "docker build -t ${env.DOCKER_USER}/wanderlust-frontend-beta:${params.FRONTEND_DOCKER_TAG} ."
+                            sh "docker push ${env.DOCKER_USER}/wanderlust-frontend-beta:${params.FRONTEND_DOCKER_TAG}"
                         }
                     }
                 }
