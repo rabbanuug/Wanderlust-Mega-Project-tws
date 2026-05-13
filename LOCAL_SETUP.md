@@ -128,6 +128,11 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
     -o jsonpath="{.data.password}" | base64 -d; echo
 ```
 
+Argocd password reset:
+```bash
+kubectl -n argocd patch secret argocd-initial-admin-secret -p '{"data": {"password": "YWRtaW4="}}'
+```
+
 ### ArgoCD CLI
 
 Install the ArgoCD CLI:
